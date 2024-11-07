@@ -1,0 +1,34 @@
+name: PR Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  check:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Check Dart Issues
+        id: check_dart_issues
+        run: |
+          # Install Dart and Flutter dependencies
+          fvm flutter pub get
+
+          # Check for Dart issues
+          fvm flutter analyze > dart_issues.txt || true
+
+          # Check if there are any issues
+          if grep -q "No issues found." dart_issues.txt; then
+            echo "No Dart issues found."
+          else
+            echo "Dart issues found. Exiting."
+            cat dart_issues.txt
+            exit 1
+          fi
+
+      - name: Cleanup PR description and analysis files
+        run: |
+          rm -f dart_issues.txt
