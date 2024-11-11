@@ -1,0 +1,27 @@
+name: iOS Release - Staging
+
+on:
+  pull_request:
+    branches: [stage]
+    types: [closed]
+
+jobs:
+  build:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'stage'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Fetch PR Description and set as env variable
+        id: pr_description
+        run: echo "$" > pr_description.txt
+
+      - name: Build and Release
+        run: |
+          cd ios
+          fastlane release_ios_stg
+
+      - name: Cleanup
+        run: |
+          rm -f pr_description.txt
