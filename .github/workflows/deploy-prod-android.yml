@@ -1,0 +1,27 @@
+name: Android Release - Production
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+jobs:
+  build:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Fetch PR Description and set as env variable
+        id: pr_description
+        run: echo "$" > pr_description_prod.txt
+
+      - name: Build and Release
+        run: |
+          cd android
+          fastlane deploy_firebase_prod
+
+      - name: Cleanup
+        run: |
+          rm -f pr_description_prod.txt
