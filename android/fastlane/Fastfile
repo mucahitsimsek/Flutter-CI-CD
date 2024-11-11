@@ -1,0 +1,126 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:android)
+
+ENV["FIREBASE_LOGIN_CREDENTIALS"] = "fastlane/firebase_login_credentials.json"
+
+build_number = 1
+version_number = "1.0.0"
+
+platform :android do
+
+  desc "flutter Pub Get"
+  lane :flutter_pub_get do
+    Dir.chdir("../../") do
+      sh("fvm flutter clean")
+      sh("fvm flutter pub get")
+    end
+  end
+
+  desc "Release Android Deployment"
+  lane :release_android do |options|
+    appId = options[:appId]
+    flavor = options[:flavor]
+    appEnv = options[:appEnv]
+
+    begin
+      flutter_pub_get
+      build_apk(appId: appId, flavor: flavor, buildName: appEnv)
+      upload_android(appId: appId, flavor: flavor)
+      
+    rescue 
+      UI.message("Error Release Android Deployment")
+    end
+  end
+
+  desc "Build APK"
+  lane :build_apk do |options|
+    appId = options[:appId]
+    appEnv = options[:buildName]
+    flavor = options[:flavor]
+    UI.message(appEnv)
+    begin 
+      latest_release = firebase_app_distribution_get_latest_release(
+        app: appId,
+        service_credentials_file: ENV["FIREBASE_LOGIN_CREDENTIALS"],
+      )
+      build_number = latest_release[:build_number].to_i + 1
+    rescue 
+      UI.message("No previous release found, setting build number to 1")
+      build_number = 1
+    end
+    Dir.chdir("../../") do
+      sh("fvm flutter build apk --flavor #{flavor} --dart-define=APP_ENV=#{appEnv} --profile --build-name=#{version_number} --build-number=#{build_number}")
+    end  
+  end
+
+  desc "Upload Android APK to Firebase App Distribution for the specified environment"
+  lane :upload_android do |options|
+    appId = options[:appId]
+    flavor = options[:flavor]
+
+    pr_description_file = File.expand_path("../../../pr_description_android.txt", __FILE__)
+    pr_description = if File.exist?(pr_description_file)
+                       File.read(pr_description_file).strip
+                     else
+                       "No PR description provided"
+                     end
+
+    apk_dir = File.expand_path("../../../build/app/outputs/flutter-apk", __FILE__)
+    apk_files = Dir.glob("#{apk_dir}/app-#{flavor}-profile.apk").sort_by { |f| File.mtime(f) }
+    if apk_files.empty?
+      UI.user_error!("No APK files found in '#{apk_dir}'")
+    else
+      latest_apk = apk_files.last
+    end
+
+    firebase_app_distribution(
+      app: appId,
+      groups: "testers",
+      release_notes: pr_description,
+      apk_path: latest_apk,
+      service_credentials_file: ENV["FIREBASE_LOGIN_CREDENTIALS"]
+    )
+  end
+
+
+  desc "Deploy Dev Apk to Firebase"
+  lane :deploy_firebase_dev do
+    release_android(
+      appId: "FIREBASE APP ID HERE", 
+      flavor: "development", 
+      appEnv: "dev",
+    )
+  end
+  
+  desc "Deploy Stage Apk to Firebase"
+  lane :deploy_firebase_stage do
+    release_android(
+      appId: "FIREBASE APP ID HERE", 
+      flavor: "staging", 
+      appEnv: "stage",
+    )
+  end
+
+  desc "Deploy Prod Apk to Firebase"
+  lane :deploy_firebase_prod do
+    release_android(
+      appId: "FIREBASE APP ID HERE", 
+      flavor: "production", 
+      appEnv: "prod",
+    )
+  end
+end
