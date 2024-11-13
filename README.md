@@ -28,7 +28,7 @@
 - [Github Actions](https://docs.github.com/en/actions/writing-workflows/quickstart) Setup: 
     - With the environments we used in Flavor, we will automate the codes we wrote in fastlane at this stage. To do this, we will create a 📂 **workflows** folder under the 📂 **.github/** folder in the main hierarchy of the project and ensure that our 📄 **.yml** files are triggered.
 
-## Flavor
+## Flavor - **iOS**
 - Open your project in Xcode.
 - To add a new Schema, select Product > Schema > New Schema from the menu. Then let's name the schema as production, staging and development.
     - In order to separate existing configurations from other configurations, we must first add new configurations for the schemas we will create.
@@ -42,3 +42,29 @@
 - As a last step, we update the name of our application so that we can analyze the environment in which it works **(APP_DISPLAY_NAME ADDED ON INFO.PLIST)**.
 <br/><img src="/images/ios/ios-display-name.png"/>
 <br/><img src="/images/ios/ios-display-name-2.png"/>
+
+## Flavor - **Android**
+
+- For Android installations, you must add the following conditions in android/app/build.gradle:
+
+```xml
+    flavorDimensions "default"
+
+    productFlavors { 
+        production {
+            dimension "default"
+            applicationIdSuffix ""
+            manifestPlaceholders = [appName: "YOUR APP NAME"]
+        }
+        staging {
+            dimension "default"
+            applicationIdSuffix ".stg"
+            manifestPlaceholders = [appName: "[STG] YOUR APP NAME"]
+        }
+        development {
+            dimension "default"
+            applicationIdSuffix ".dev"
+            manifestPlaceholders = [appName: "[DEV] YOUR APP NAME"]
+        }
+    }
+```
