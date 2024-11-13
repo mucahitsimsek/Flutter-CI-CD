@@ -34,3 +34,7 @@
     - In order to separate existing configurations from other configurations, we must first add new configurations for the schemas we will create.
     - Under the Info tab at the end of the Configurations dropdown list, click the plus button and duplicate each configuration name (Debug, Release, and Profile). Duplicate the existing configurations, once for each environment.
 <img src="/images/ios/ios-runner-config.png"/>
+    - Then we match the configurations we created with schemes. 
+<img src="/images/ios/ios-schemes.png"/>
+<br/>
+<img src="/images/ios/ios-scheme.png"/>
