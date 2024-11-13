@@ -32,6 +32,34 @@
     - With the environments we used in Flavor, we will automate the codes we wrote in fastlane at this stage. To do this, we will create a 📂 **workflows** folder under the 📂 **.github/** folder in the main hierarchy of the project and ensure that our 📄 **.yml** files are triggered.
 
 ## Flavor - Dart
+- First we will use the --dart-define parameter. This is to prevent creating more than one main.dart file. In this way, we will be able to easily understand which env is being run on a single path. For this, let's update [.vscode/launch.json](/.vscode/launch.json) as below.
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch development",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+                "--flavor",
+                "development",
+                "--target",
+                "lib/main.dart",
+                "--dart-define",
+                "ENVIRONMENT=dev"
+            ]
+        },
+    ]
+}
+
+```
+- This [dart-define](https://dartcode.org/docs/using-dart-define-in-flutter/) parameter provides us the value directly when the project starts. 
+- If you want to run from the terminal:
+```bash
+flutter run --flavor development --target=lib/main.dart --dart-define=ENVIRONMENT=dev
+```
 - As we talked about in the posts above, we were creating 3 environments: production, staging and development.
 Accordingly, we code the following dart file for flutter installation.
 [flavor_config.dart](/lib/base/config/flavor_config.dart)
