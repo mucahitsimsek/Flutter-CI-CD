@@ -13,7 +13,7 @@
 - I used [Flavor](https://saileshdahal.com.np/flavor-setup-flutter) **(You can also learn about the flavor processes with the similarities I made here.)** in Flutter because I want to create development-stage-production environments to separate testing processes and features that are still in development.
 
 ## Steps
-- Flavor Setup:
+- [Flavor](https://docs.flutter.dev/deployment/flavors) Setup:
   - First of all, we have to define the environments we want to create. Here are the things we demand: 
     - New features should not affect active users.
     - Features that have finished development need to be tested.
@@ -22,11 +22,14 @@
         - Development
         - Staging
         - Production
-## iOS Flavor Setup:
-```
-- Open Xcode and select the Runner target in your project.
-- Under the Runner project, right-click Runner in the Targets section and Duplicate to create a copy of it.
-- Give the new target a name such as Production, Development or Staging. (All 3 environments must be created as a scheme).
-- Update the Bundle Identifier for each target so that each environment is unique (for example, com.example.app.dev).
-- In Build Configuration, update the Debug, Release, Profile settings for each target.
-```
+    - Using these environments, let's first write our target code and then complete the installations on iOS and Android locally.
+- [Fastlane](https://docs.flutter.dev/deployment/cd#fastlane)  Setup:
+    - We will cover fastlane installations directly for [iOS](https://docs.fastlane.tools/getting-started/ios/setup/) and [Android](https://docs.fastlane.tools/getting-started/android/setup/). Therefore, if you want to proceed through the doc, please proceed through these tabs.
+- [Github Actions](https://docs.github.com/en/actions/writing-workflows/quickstart) Setup: 
+    - With the environments we used in Flavor, we will automate the codes we wrote in fastlane at this stage. To do this, we will create a 📂 **workflows** folder under the 📂 **.github/** folder in the main hierarchy of the project and ensure that our 📄 **.yml** files are triggered.
+
+## Flavor
+- Open your project in Xcode.
+- To add a new Schema, select Product > Schema > New Schema from the menu. Then let's name the schema as production, staging and development. Example:
+
+  
