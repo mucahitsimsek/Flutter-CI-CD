@@ -13,7 +13,7 @@
 - I used [Flavor](https://saileshdahal.com.np/flavor-setup-flutter) **(You can also learn about the flavor processes with the similarities I made here.)** in Flutter because I want to create development-stage-production environments to separate testing processes and features that are still in development.
 
 <div align="center">
-    <h1>Steps</h1>
+    <h3>Steps</h3>
 </div>
 
 - [Flavor](https://docs.flutter.dev/deployment/flavors) Setup:
@@ -30,6 +30,60 @@
     - We will cover fastlane installations directly for [iOS](https://docs.fastlane.tools/getting-started/ios/setup/) and [Android](https://docs.fastlane.tools/getting-started/android/setup/). Therefore, if you want to proceed through the doc, please proceed through these tabs.
 - [Github Actions](https://docs.github.com/en/actions/writing-workflows/quickstart) Setup: 
     - With the environments we used in Flavor, we will automate the codes we wrote in fastlane at this stage. To do this, we will create a 📂 **workflows** folder under the 📂 **.github/** folder in the main hierarchy of the project and ensure that our 📄 **.yml** files are triggered.
+
+## Flavor - Flutter
+- As we talked about in the posts above, we were creating 3 environments: production, staging and development.
+Accordingly, we code the following dart file for flutter installation.
+[flavor_config.dart](/lib/base/config/flavor_config.dart)
+```dart
+final class FlavorConfiguration {
+  final EnvironmentType environmentType;
+  final String baseUrl;
+
+  FlavorConfiguration._({required this.environmentType, required this.baseUrl});
+
+  static final _env = EnvironmentType.currentEnv;
+
+  static final FlavorConfiguration instance = FlavorConfiguration._(
+    environmentType: _env,
+    baseUrl: _env.baseUrl,
+  );
+}
+```
+- We need to define the environment type in the following way.
+```dart
+enum EnvironmentType {
+  dev(FlavorConst.dev),
+  stage(FlavorConst.stage),
+  prod(FlavorConst.prod);
+
+  const EnvironmentType(this.environment);
+
+  final String environment;
+
+  static EnvironmentType get currentEnv => EnvironmentType.fromString(
+      const String.fromEnvironment(FlavorConst.environment));
+
+  String get baseUrl {
+    return switch (currentEnv) {
+      dev => FlavorConst.devUrl,
+      stage => FlavorConst.stageUrl,
+      prod => FlavorConst.prodUrl,
+    };
+  }
+
+  static EnvironmentType fromString(String value) {
+    return EnvironmentType.values.firstWhere(
+      (e) => e.environment == value,
+      orElse: () => throw UnknownDevice(value),
+    );
+  }
+
+  bool get isDev => currentEnv == dev;
+  bool get isStage => currentEnv == stage;
+  bool get isProd => currentEnv == prod;
+}
+```
 
 ## Flavor - iOS
 - Open your project in Xcode.
