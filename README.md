@@ -44,10 +44,8 @@
 <br/><img src="/images/ios/ios-display-name-2.png"/>
 
 ## Flavor - **Android**
-
-- For Android configuration you need to add the following conditions in [android/app/build.gradle](/android/app/build.gradle#L78-L95):
-
-```xml
+- For Android configuration you need to add the following conditions in [android/app/build.gradle](/android/app/build.gradle#L78-L96):
+```gradle
     flavorDimensions "default"
 
     productFlavors { 
@@ -68,3 +66,12 @@
         }
     }
 ```
+- Please update the [Android Manifest File](/android/app/src/main/AndroidManifest.xml) as follows.
+```xml
+    <application
+        android:label="${appName}"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher">
+```
+- If you want to update the icons in android, you need to update the [src](/android/app/src/) content as in the image.
+<br/><img src="/images/android/app-src.png"/>
