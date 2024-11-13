@@ -30,6 +30,7 @@
 
 ## Flavor
 - Open your project in Xcode.
-- To add a new Schema, select Product > Schema > New Schema from the menu. Then let's name the schema as production, staging and development. Example:
-
-  
+- To add a new Schema, select Product > Schema > New Schema from the menu. Then let's name the schema as production, staging and development.
+    - In order to separate existing configurations from other configurations, we must first add new configurations for the schemas we will create.
+    - Under the Info tab at the end of the Configurations dropdown list, click the plus button and duplicate each configuration name (Debug, Release, and Profile). Duplicate the existing configurations, once for each environment.
+<img src="/images/ios/ios-runner-config.png" width="350" />
