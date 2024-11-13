@@ -31,7 +31,7 @@
 - [Github Actions](https://docs.github.com/en/actions/writing-workflows/quickstart) Setup: 
     - With the environments we used in Flavor, we will automate the codes we wrote in fastlane at this stage. To do this, we will create a 📂 **workflows** folder under the 📂 **.github/** folder in the main hierarchy of the project and ensure that our 📄 **.yml** files are triggered.
 
-## Flavor - Flutter
+## Flavor - Dart
 - As we talked about in the posts above, we were creating 3 environments: production, staging and development.
 Accordingly, we code the following dart file for flutter installation.
 [flavor_config.dart](/lib/base/config/flavor_config.dart)
