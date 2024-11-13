@@ -29,11 +29,10 @@
     - With the environments we used in Flavor, we will automate the codes we wrote in fastlane at this stage. To do this, we will create a 📂 **workflows** folder under the 📂 **.github/** folder in the main hierarchy of the project and ensure that our 📄 **.yml** files are triggered.
 
 ## Firebase App Distribution
-[iOS Distribution](https://firebase.google.com/docs/app-distribution/ios/distribute-fastlane?hl=tr)
-[Android Distribution](https://firebase.google.com/docs/app-distribution/android/distribute-fastlane?hl=tr)
-[My Android Distribution](/android/fastlane/Fastfile)
-
-| [My iOS Distribution](/ios/fastlane/Fastfile). | **I will add it soon.** |
+[iOS Distribution](https://firebase.google.com/docs/app-distribution/ios/distribute-fastlane?hl=tr) <br/>
+[Android Distribution](https://firebase.google.com/docs/app-distribution/android/distribute-fastlane?hl=tr) <br/>
+[My Android Distribution](/android/fastlane/Fastfile) <br/>
+[My iOS Distribution](/ios/fastlane/Fastfile).**I will add it soon.** |
 
 ## Flavor - Dart
 - First we will use the --dart-define parameter. This is to prevent creating more than one main.dart file. In this way, we will be able to easily understand which env is being run on a single path. For this, let's update [.vscode/launch.json](/.vscode/launch.json) as below.
