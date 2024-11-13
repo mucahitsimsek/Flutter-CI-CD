@@ -1,6 +1,4 @@
-<div align="center">
-    <h1>Flutter CI/CD Processes</h1>
-</div>
+<div align="center"><h1>Flutter CI/CD Processes</h1></div>
 
 ## Presentation
 - The aim of our project is to show how CI/CD processes work in a real-time project.
@@ -12,10 +10,9 @@
 - [Fastlane](https://docs.fastlane.tools/) It is a practical solution that automates the easy creation and release of new versions to test and production environments.
 - I used [Flavor](https://saileshdahal.com.np/flavor-setup-flutter) **(You can also learn about the flavor processes with the similarities I made here.)** in Flutter because I want to create development-stage-production environments to separate testing processes and features that are still in development.
 
-<div align="center">
-    <h3>Steps</h3>
-</div>
+<div align="center"><h3>Steps</h3></div>
 
+- [Firebase App Distribution](https://firebase.google.com/docs/app-distribution?hl=tr) Setup
 - [Flavor](https://docs.flutter.dev/deployment/flavors) Setup:
   - First of all, we have to define the environments we want to create. Here are the things we demand: 
     - New features should not affect active users.
@@ -30,6 +27,9 @@
     - We will cover fastlane installations directly for [iOS](https://docs.fastlane.tools/getting-started/ios/setup/) and [Android](https://docs.fastlane.tools/getting-started/android/setup/). Therefore, if you want to proceed through the doc, please proceed through these tabs.
 - [Github Actions](https://docs.github.com/en/actions/writing-workflows/quickstart) Setup: 
     - With the environments we used in Flavor, we will automate the codes we wrote in fastlane at this stage. To do this, we will create a 📂 **workflows** folder under the 📂 **.github/** folder in the main hierarchy of the project and ensure that our 📄 **.yml** files are triggered.
+
+## Firebase App Distribution
+
 
 ## Flavor - Dart
 - First we will use the --dart-define parameter. This is to prevent creating more than one main.dart file. In this way, we will be able to easily understand which env is being run on a single path. For this, let's update [.vscode/launch.json](/.vscode/launch.json) as below.
@@ -160,3 +160,21 @@ enum EnvironmentType {
 ```
 - If you want to update the icons in android, you need to update the [src](/android/app/src/) content as in the image.
 <br/><img src="/images/android/app-src.png"/>
+
+## Fastlane
+- Please review the following folders:
+    - [iOS](/ios/fastlane)
+    - [Android](/android/fastlane)
+
+**For Details:**
+<br/>
+
+[Fastlane Docs](https://docs.fastlane.tools/)
+
+## Github Actions
+- We need to automate the processes we have done so far. For this, we will use Github Actions.
+- We will create a new folder under the .github folder in the main hierarchy of the project and name it workflows.
+- In this folder we will create a new file and name it as you like. You can see my nomenclature here:
+    - [.github/workflows](/.github/workflows)
+- When you examine the workflows we created, there are pr-check and deploys. Of these, [pr-check](/.github/workflows/pr-check.yml) will work when a pull request is created. The other workflows are set to run when merge to dev-stage-main branches. 
+- Whichever branch pr is accepted, the deployment process will start as a result of the action triggered in this case. For example, [deploy-dev-android](/.github/workflows/deploy-dev-android.yml) requires merge to the “dev” branch.
