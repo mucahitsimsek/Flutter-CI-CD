@@ -45,7 +45,7 @@
 
 ## Flavor - **Android**
 
-- For Android installations, you must add the following conditions in android/app/build.gradle:
+- For Android configuration you need to add the following conditions in [android/app/build.gradle](/android/app/build.gradle#L78-L95):
 
 ```xml
     flavorDimensions "default"
