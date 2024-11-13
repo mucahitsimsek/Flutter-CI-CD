@@ -2,9 +2,7 @@
     <h1>Flutter CI/CD Processes</h1>
 </div>
 
-<div align="center">
-    <h1>Presentation</h1>
-</div>
+## Presentation
 - The aim of our project is to show how CI/CD processes work in a real-time project.
 - The CI/CD process in Flutter is to automate what we do manually using Github Actions. In this way, you can quickly get builds, test and production versions.
   
