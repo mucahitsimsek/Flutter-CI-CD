@@ -33,8 +33,12 @@
 - To add a new Schema, select Product > Schema > New Schema from the menu. Then let's name the schema as production, staging and development.
     - In order to separate existing configurations from other configurations, we must first add new configurations for the schemas we will create.
     - Under the Info tab at the end of the Configurations dropdown list, click the plus button and duplicate each configuration name (Debug, Release, and Profile). Duplicate the existing configurations, once for each environment.
-<img src="/images/ios/ios-runner-config.png"/>
-    - Then we match the configurations we created with schemes. 
-<img src="/images/ios/ios-schemes.png"/>
-<br/>
-<img src="/images/ios/ios-scheme.png"/>
+<br/><img src="/images/ios/ios-runner-config.png"/>
+- **Then we create schemes to map the configurations we created. We map the schemes we created with configurations. You can examine the visuals:**
+<br/><img src="/images/ios/ios-schemes.png"/>
+<br/><img src="/images/ios/ios-scheme.png"/>
+- After these operations, we need to update the project bundle ids. 
+<br/><img src="/images/ios/ios-bundle-id.png"/>
+- As a last step, we update the name of our application so that we can analyze the environment in which it works **(APP_DISPLAY_NAME ADDED ON INFO.PLIST)**.
+<br/><img src="/images/ios/ios-display-name.png"/>
+<br/><img src="/images/ios/ios-display-name-2.png"/>
