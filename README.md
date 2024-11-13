@@ -32,7 +32,7 @@
 [iOS Distribution](https://firebase.google.com/docs/app-distribution/ios/distribute-fastlane?hl=tr) <br/>
 [Android Distribution](https://firebase.google.com/docs/app-distribution/android/distribute-fastlane?hl=tr) <br/>
 [My Android Distribution](/android/fastlane/Fastfile) <br/>
-[My iOS Distribution](/ios/fastlane/Fastfile).**I will add it soon.** |
+[My iOS Distribution](/ios/fastlane/Fastfile). **I will add it soon.** 
 
 ## Flavor - Dart
 - First we will use the --dart-define parameter. This is to prevent creating more than one main.dart file. In this way, we will be able to easily understand which env is being run on a single path. For this, let's update [.vscode/launch.json](/.vscode/launch.json) as below.
