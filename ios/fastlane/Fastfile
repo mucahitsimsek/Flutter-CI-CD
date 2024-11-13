@@ -1,122 +1,125 @@
-default_platform(:ios)
+# Will be made in Firebase App Distribution
+# Because not all developers have access to the App Store, we will use Firebase App Distribution to distribute the app to testers.
 
-platform :ios do
-  #ADD TO TEAM ID TO FASTFILE
-  #ENV['FASTLANE_ITC_TEAM_ID'] = "123456789"
-  APP_VERSION = "1.0.0"# Replace with your current version number
-  ENV['FASTLANE_USER'] = "" # add your apple id
-  ENV['FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD'] = "" # add your app specific password
+# default_platform(:ios)
 
-  desc "Flutter Clean And Pub Get"
-  lane :flutter_clean do
-    Dir.chdir("../../") do
-      sh("flutter clean")
-      sh("flutter pub get")
-    end
-  end
+# platform :ios do
+#   #ADD TO TEAM ID TO FASTFILE
+#   #ENV['FASTLANE_ITC_TEAM_ID'] = "123456789"
+#   APP_VERSION = "1.0.0"# Replace with your current version number
+#   ENV['FASTLANE_USER'] = "" # add your apple id
+#   ENV['FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD'] = "" # add your app specific password
 
-  desc "Increment build number based on the latest TestFlight build number"
-  lane :increment_build_number_from_testflight do |options|
-    version = options[:version]
+#   desc "Flutter Clean And Pub Get"
+#   lane :flutter_clean do
+#     Dir.chdir("../../") do
+#       sh("flutter clean")
+#       sh("flutter pub get")
+#     end
+#   end
+
+#   desc "Increment build number based on the latest TestFlight build number"
+#   lane :increment_build_number_from_testflight do |options|
+#     version = options[:version]
     
-    # Fetch the latest build number from TestFlight
-    latest_build_number = latest_testflight_build_number(
-      version: version,
-    )
+#     # Fetch the latest build number from TestFlight
+#     latest_build_number = latest_testflight_build_number(
+#       version: version,
+#     )
 
-    # Increment the build number
-    increment_build_number(
-      build_number: latest_build_number + 1,
-    )
-  end
+#     # Increment the build number
+#     increment_build_number(
+#       build_number: latest_build_number + 1,
+#     )
+#   end
 
-  desc "Build iOS IPA for the specified environment"
-  lane :build_ios do |options|
-    env = options[:env]
-    app_identifier = options[:app_identifier]
-    flutter_flavor = options[:flutter_flavor]
-    app_env = options[:app_env]
+#   desc "Build iOS IPA for the specified environment"
+#   lane :build_ios do |options|
+#     env = options[:env]
+#     app_identifier = options[:app_identifier]
+#     flutter_flavor = options[:flutter_flavor]
+#     app_env = options[:app_env]
 
-    # Set the app identifier for the build process
-    ENV['FASTLANE_APP_IDENTIFIER'] = app_identifier
+#     # Set the app identifier for the build process
+#     ENV['FASTLANE_APP_IDENTIFIER'] = app_identifier
 
-    increment_build_number_from_testflight(version: APP_VERSION) 
-    cocoapods
-    # Obfuscate code if environment is production
-    obfuscation_flag = env == "prod" ? "--obfuscate --split-debug-info=./debug-info" : ""
+#     increment_build_number_from_testflight(version: APP_VERSION) 
+#     cocoapods
+#     # Obfuscate code if environment is production
+#     obfuscation_flag = env == "prod" ? "--obfuscate --split-debug-info=./debug-info" : ""
 
-    Dir.chdir("../../") do
-      sh("flutter build ipa --flavor #{flutter_flavor} --dart-define=ENVIRONMENT=#{app_env} --release #{obfuscation_flag}")
-    end
-  end
+#     Dir.chdir("../../") do
+#       sh("flutter build ipa --flavor #{flutter_flavor} --dart-define=ENVIRONMENT=#{app_env} --release #{obfuscation_flag}")
+#     end
+#   end
 
-  desc "Export iOS IPA for the specified environment"
-  lane :export_ios do |options|
-    env = options[:env]
+#   desc "Export iOS IPA for the specified environment"
+#   lane :export_ios do |options|
+#     env = options[:env]
 
-    Dir.chdir("../../") do
-      sh("xcodebuild -exportArchive -archivePath ./build/ios/archive/Runner.xcarchive -exportOptionsPlist ./ios/exportOptions.plist -exportPath ./build/ios/archive/ipa/#{env} -allowProvisioningUpdates ENABLE_BITCODE=NO")
-    end
-  end
+#     Dir.chdir("../../") do
+#       sh("xcodebuild -exportArchive -archivePath ./build/ios/archive/Runner.xcarchive -exportOptionsPlist ./ios/exportOptions.plist -exportPath ./build/ios/archive/ipa/#{env} -allowProvisioningUpdates ENABLE_BITCODE=NO")
+#     end
+#   end
 
-  desc "Upload iOS IPA to App Store Connect for the specified environment"
-  lane :upload_ios do |options|
-    env = options[:env]
+#   desc "Upload iOS IPA to App Store Connect for the specified environment"
+#   lane :upload_ios do |options|
+#     env = options[:env]
 
-    # Find latest .ipa file
-    ipa_dir = File.expand_path("../../../build/ios/archive/ipa/#{env}", __FILE__)
-    ipa_files = Dir.glob("#{ipa_dir}/*.ipa").sort_by { |f| File.mtime(f) }
-    if ipa_files.empty?
-      UI.user_error!("No ipa files found in '#{ipa_dir}'")
-    else
-      latest_ipa = ipa_files.last
-    end
+#     # Find latest .ipa file
+#     ipa_dir = File.expand_path("../../../build/ios/archive/ipa/#{env}", __FILE__)
+#     ipa_files = Dir.glob("#{ipa_dir}/*.ipa").sort_by { |f| File.mtime(f) }
+#     if ipa_files.empty?
+#       UI.user_error!("No ipa files found in '#{ipa_dir}'")
+#     else
+#       latest_ipa = ipa_files.last
+#     end
 
-    pr_description_file = File.expand_path("../../../pr_description.txt", __FILE__)
-    pr_description = if File.exist?(pr_description_file)
-                       File.read(pr_description_file).strip
-                     else
-                       "No PR description provided"
-                     end
+#     pr_description_file = File.expand_path("../../../pr_description.txt", __FILE__)
+#     pr_description = if File.exist?(pr_description_file)
+#                        File.read(pr_description_file).strip
+#                      else
+#                        "No PR description provided"
+#                      end
 
-    upload_to_testflight(
-      skip_waiting_for_build_processing: true,
-      ipa: latest_ipa,
-      changelog: "Changelog: #{pr_description}",
-      localized_build_info: {
-        "default": {
-          whats_new: pr_description,
-        }
-      }
-    )
-  end
+#     upload_to_testflight(
+#       skip_waiting_for_build_processing: true,
+#       ipa: latest_ipa,
+#       changelog: "Changelog: #{pr_description}",
+#       localized_build_info: {
+#         "default": {
+#           whats_new: pr_description,
+#         }
+#       }
+#     )
+#   end
 
-  desc "Complete release process for iOS for the specified environment"
-  lane :release_ios do |options|
-    env = options[:env]
-    app_identifier = options[:app_identifier]
-    flutter_flavor = options[:flutter_flavor]
-    app_env = options[:app_env]
+#   desc "Complete release process for iOS for the specified environment"
+#   lane :release_ios do |options|
+#     env = options[:env]
+#     app_identifier = options[:app_identifier]
+#     flutter_flavor = options[:flutter_flavor]
+#     app_env = options[:app_env]
 
-    flutter_clean
-    build_ios(env: env, app_identifier: app_identifier, flutter_flavor: flutter_flavor, app_env: app_env)
-    export_ios(env: env)
-    upload_ios(env: env)
-  end
+#     flutter_clean
+#     build_ios(env: env, app_identifier: app_identifier, flutter_flavor: flutter_flavor, app_env: app_env)
+#     export_ios(env: env)
+#     upload_ios(env: env)
+#   end
 
-  # Define lanes for each environment
-  desc "Release iOS Production"
-  lane :release_ios_prod do
-    release_ios(env: "prod", app_identifier: "com.example.hadibucopy", flutter_flavor: "production", app_env: "prod")
-  end
+#   # Define lanes for each environment
+#   desc "Release iOS Production"
+#   lane :release_ios_prod do
+#     release_ios(env: "prod", app_identifier: "com.example.hadibucopy", flutter_flavor: "production", app_env: "prod")
+#   end
 
-  desc "Release iOS Development"
-  lane :release_ios_dev do
-    release_ios(env: "dev", app_identifier: "com.example.hadibucopy.dev", flutter_flavor: "development", app_env: "dev")
-  end
+#   desc "Release iOS Development"
+#   lane :release_ios_dev do
+#     release_ios(env: "dev", app_identifier: "com.example.hadibucopy.dev", flutter_flavor: "development", app_env: "dev")
+#   end
 
-  desc "Release iOS Staging"
-  lane :release_ios_stg do
-    release_ios(env: "stage", app_identifier: "com.example.hadibucopy.stg", flutter_flavor: "staging", app_env: "stage")
-  end
-end
+#   desc "Release iOS Staging"
+#   lane :release_ios_stg do
+#     release_ios(env: "stage", app_identifier: "com.example.hadibucopy.stg", flutter_flavor: "staging", app_env: "stage")
+#   end
+# end
