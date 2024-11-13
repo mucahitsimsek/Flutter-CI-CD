@@ -181,3 +181,13 @@ enum EnvironmentType {
     - [.github/workflows](/.github/workflows)
 - When you examine the workflows we created, there are pr-check and deploys. Of these, [pr-check](/.github/workflows/pr-check.yml) will work when a pull request is created. The other workflows are set to run when merge to dev-stage-main branches. 
 - Whichever branch pr is accepted, the deployment process will start as a result of the action triggered in this case. For example, [deploy-dev-android](/.github/workflows/deploy-dev-android.yml) requires merge to the “dev” branch.
+
+- I connected to github actions on my device, follow these steps to do it on yours: 
+    - Open Github repository
+    - Click on the Settings tab, from there open the actions menu.
+<br/><img src="/images/github/github-settings.png"/>
+    - Click on runners and create a runner. 
+<br/><img src="/images/github/github-create-runner.png"/>
+    - After creating the Runner, it will look like this.
+<br/><img src="/images/github/github-runners.png"/>
+    
