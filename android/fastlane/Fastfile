@@ -15,56 +15,49 @@
 
 default_platform(:android)
 
-ENV["FIREBASE_LOGIN_CREDENTIALS"] = "fastlane/firebase_login_credentials.json"
-
-build_number = 1
-version_number = "1.0.0"
+version_number = "1.0.0" # Update this with the version number of the app
+SLACK_CHANNEL = "#deployhan-gossip" # Update this with the Slack channel
+SLACK_URL = "SLACK URL" # Update this with the Slack URL
+SLACK_BOT_NAME = "deployhan" # Update this with the Slack bot name
+ENV["FIREBASE_LOGIN_CREDENTIALS"] = "fastlane/firebase_login_credentials.json" # Update this with the path to the Firebase login credentials
+ENV["GOOGLE_SERVICE_CREDENTIALS"] = "fastlane/google_service_credentials.json" # Update this with the path to the Google service credentials
+FIREBASE_TESTER_GROUP_ID="testers" # Update this with the Firebase tester group ID
+BOT_MOOD_TEXT= SLACK_BOT_NAME + "'s Mood"
+BOT_MOOD = ["💪 Pumped", "😎 Chill", "🔥 On Fire", "🧠 Genius"] 
 
 platform :android do
-
-  desc "flutter Pub Get"
-  lane :flutter_pub_get do
+  desc "Flutter Pub Get"
+  lane :flutter_get_pubs do
     Dir.chdir("../../") do
-      sh("fvm flutter clean")
       sh("fvm flutter pub get")
     end
   end
 
-  desc "Release Android Deployment"
-  lane :release_android do |options|
-    appId = options[:appId]
-    flavor = options[:flavor]
+  desc "Build Android APK for the specified environment"
+  lane :build_android do |options|
     appEnv = options[:appEnv]
+    flavor = options[:flavor]
 
     begin
-      flutter_pub_get
-      build_apk(appId: appId, flavor: flavor, buildName: appEnv)
-      upload_android(appId: appId, flavor: flavor)
-      
-    rescue 
-      UI.message("Error Release Android Deployment")
-    end
-  end
-
-  desc "Build APK"
-  lane :build_apk do |options|
-    appId = options[:appId]
-    appEnv = options[:buildName]
-    flavor = options[:flavor]
-    UI.message(appEnv)
-    begin 
       latest_release = firebase_app_distribution_get_latest_release(
-        app: appId,
-        service_credentials_file: ENV["FIREBASE_LOGIN_CREDENTIALS"],
+        app: options[:appId],
+        service_credentials_file: ENV["FIREBASE_LOGIN_CREDENTIALS"]
       )
-      build_number = latest_release[:build_number].to_i + 1
-    rescue 
-      UI.message("No previous release found, setting build number to 1")
+      build_number = latest_release[:buildVersion].to_i + 1
+    rescue => error
+      UI.message("No previous release found or an error occurred: #{error}. Setting build number to 1.")
       build_number = 1
     end
-    Dir.chdir("../../") do
-      sh("fvm flutter build apk --flavor #{flavor} --dart-define=APP_ENV=#{appEnv} --profile --build-name=#{version_number} --build-number=#{build_number}")
-    end  
+    
+    if appEnv == "prod"
+      Dir.chdir("../../") do
+        sh("fvm flutter build appbundle --flavor #{flavor} --dart-define=APP_ENV=#{appEnv} --release --build-name=#{version_number} --build-number=#{build_number}")
+      end
+    else
+      Dir.chdir("../../") do
+        sh("fvm flutter build apk --flavor #{flavor} --dart-define=APP_ENV=#{appEnv} --release --build-name=#{version_number} --build-number=#{build_number}")
+      end
+    end    
   end
 
   desc "Upload Android APK to Firebase App Distribution for the specified environment"
@@ -79,48 +72,229 @@ platform :android do
                        "No PR description provided"
                      end
 
-    apk_dir = File.expand_path("../../../build/app/outputs/flutter-apk", __FILE__)
-    apk_files = Dir.glob("#{apk_dir}/app-#{flavor}-profile.apk").sort_by { |f| File.mtime(f) }
-    if apk_files.empty?
-      UI.user_error!("No APK files found in '#{apk_dir}'")
-    else
-      latest_apk = apk_files.last
+    if flavor == "production"
+      aab_dir = File.expand_path("../../../build/app/outputs/bundle/#{flavor}Release/", __FILE__)
+      aab_files = Dir.glob("#{aab_dir}/app-#{flavor}-release.aab").sort_by { |f| File.mtime(f) }
+      if aab_files.empty?
+        UI.error("No AAB files found in '#{aab_dir}'")
+      else
+        latest_aab = aab_files.last
+      end
+    else 
+      apk_dir = File.expand_path("../../../build/app/outputs/flutter-apk/", __FILE__)
+      apk_files = Dir.glob("#{apk_dir}/app-#{flavor}-release.apk").sort_by { |f| File.mtime(f) }
+      if apk_files.empty?
+        UI.error("No APK files found in '#{apk_dir}'")
+      else
+        latest_apk = apk_files.last
+      end
     end
 
-    firebase_app_distribution(
+    release = firebase_app_distribution(
       app: appId,
-      groups: "testers",
+      groups: FIREBASE_TESTER_GROUP_ID,
       release_notes: pr_description,
+      android_artifact_path: latest_aab,
       apk_path: latest_apk,
       service_credentials_file: ENV["FIREBASE_LOGIN_CREDENTIALS"]
     )
+    UI.message("Firebase App Distribution release URL: #{release}")
   end
 
-
-  desc "Deploy Dev Apk to Firebase"
-  lane :deploy_firebase_dev do
-    release_android(
-      appId: "FIREBASE APP ID HERE", 
-      flavor: "development", 
-      appEnv: "dev",
-    )
-  end
-  
-  desc "Deploy Stage Apk to Firebase"
-  lane :deploy_firebase_stage do
-    release_android(
-      appId: "FIREBASE APP ID HERE", 
-      flavor: "staging", 
-      appEnv: "stage",
-    )
+  # Function to send Slack notifications
+  def send_slack_notification(success:, message:, additional_payload: {})
+    # slack(
+    #   message: message,
+    #   success: success,
+    #   channel: SLACK_CHANNEL,
+    #   slack_url: SLACK_URL,
+    #   payload: {
+    #     "Build Date" => Time.new.to_s,
+    #     "Built by" => SLACK_BOT_NAME,
+    #   }.merge(additional_payload),
+    #   default_payloads: [:git_branch]
+    # )
   end
 
-  desc "Deploy Prod Apk to Firebase"
-  lane :deploy_firebase_prod do
-    release_android(
-      appId: "FIREBASE APP ID HERE", 
-      flavor: "production", 
-      appEnv: "prod",
+  desc "Release Android Deployment"
+  lane :release_android do |options|
+    appId = options[:appId]
+    flavor = options[:flavor]
+    appEnv = options[:appEnv]
+
+    begin
+      flutter_get_pubs
+      build_android(appEnv: appEnv, flavor: flavor, appId: appId)
+      upload_android(appId: appId, flavor: flavor)
+
+      latest_release = firebase_app_distribution_get_latest_release(app: options[:appId], service_credentials_file: ENV["FIREBASE_LOGIN_CREDENTIALS"])
+
+      send_slack_notification(
+        success: true,
+        message: "New Android build is ready to be tested!",
+        additional_payload: {
+          "Version" => "V #{version_number} (#{latest_release[:buildVersion]})",
+          BOT_MOOD_TEXT => (BOT_MOOD).sample
+        }
+      )
+    rescue => error
+      UI.error("Error during release: #{error}")
+      send_slack_notification(
+        success: false,
+        message: "Android build failed with error: #{error.message}",
+        additional_payload: {
+          "Error Message" => error.message,
+          "App ID" => appId
+        }
+      )
+      exit unless error.message.include?("Some error occurred or No APK files found #error")
+    end
+  end
+
+  desc "Release Android Prod"
+  lane :release_android_prod do
+    release_android(appId: "FIREBASE APP ID FOR PRODUCTION", flavor: "production", appEnv: "prod")
+  end
+
+  desc "Release Android Staging"
+  lane :release_android_stg do
+    release_android(appId: "FIREBASE APP ID FOR STAGE", flavor: "staging", appEnv: "stage")
+    deploy_play_store(flavor: PublishType::STAGE)
+  end
+
+  desc "Release Android Dev"
+  lane :release_android_dev do 
+    release_android(appId: "FIREBASE APP ID FOR DEVELOPMENT", flavor: "development", appEnv: "dev")
+  end
+
+  ## -------------------------------------------------------------------- Google Play Console --------------------------------------------------------------------
+
+  desc "Release Android Prod Play Store"
+  lane :release_android_prod_playStore do
+    deploy_play_store(flavor: PublishType::PRODUCTION)
+  end
+
+  desc "Release Android Dev"
+  lane :release_android_dev_playStore do
+    deploy_play_store(flavor: PublishType::DEVELOPMENT)
+  end
+
+  desc "Deploy a new version to the Google Play"
+  lane :deploy_play_store do |options|
+    flavor = options[:flavor] 
+    package_name = "com.blabla.blabla" # Update this with the package name of the app
+    
+    case flavor
+      when PublishType::PRODUCTION
+        releaseType = "internal"
+        package_name = package_name + ""
+        appEnv = "prod"
+        folderPath = "release"
+      when PublishType::STAGE
+        releaseType = "internal"
+        package_name = package_name + ".stg"
+        appEnv = "stage"
+        folderPath = "staging"
+      when PublishType::DEVELOPMENT
+        releaseType = "internal"
+        package_name = package_name + ".dev"
+        appEnv = "dev"
+        folderPath = "development"
+      else 
+        UI.error("Some error occured")
+        return
+    end
+
+    UI.message("#{appEnv} PLAY STORE SÜRÜM HAZIRLANIYOR")
+
+    version = get_version_name(releaseType: releaseType, package_name: package_name)    
+    versionNumber = version_number
+    buildCode = version.nil? ? 1 : version[:buildCode].to_i + 1
+    buildBundle(flavor: flavor, appEnv: appEnv, versionNumber: versionNumber, buildCode: buildCode)
+    UI.message("Deploying version #{versionNumber} with build code #{buildCode} to Play Store")
+    uploadPlayStore(flavor: flavor, folderPath: folderPath, package_name: package_name, releaseType: releaseType, buildCode: buildCode, versionNumber: versionNumber)
+  end
+
+  def uploadPlayStore(folderPath:, flavor:, package_name:, releaseType:, buildCode:, versionNumber:)
+    aab_dir = File.expand_path("../../../build/app/outputs/bundle/#{folderPath}Release/", __FILE__)
+    aab_files = Dir.glob("#{aab_dir}/app-#{flavor}-release.aab").sort_by { |f| File.mtime(f) }
+    if aab_files.empty?
+      UI.user_error!("No APK files found in '#{aab_dir}'")
+    else
+      latest_aab = aab_files.last
+    end
+
+    begin 
+      release = supply( 
+      track: releaseType,
+      aab: latest_aab,
+      package_name: package_name,
+      release_status: "draft",
+      timeout: "0",
+      json_key: ENV["GOOGLE_SERVICE_CREDENTIALS"]
+      )
+      send_slack_notification(
+        success: true,
+        message: "New Android build is ready to be tested on Play Store 🚀",
+        additional_payload: {
+          "Version" => "V #{versionNumber} (#{buildCode})",
+          BOT_MOOD_TEXT => (BOT_MOOD).sample
+        }
+      )
+    rescue => error
+      UI.error("Error during release: #{error}")
+      send_slack_notification(
+        success: false,
+        message: "Android build failed with error: #{error.message}",
+        additional_payload: {
+          "Error Message" => error.message,
+          "Flavor" => flavor,
+          "Version" => "V #{versionNumber} (#{buildCode})"
+        }
+      )
+      return
+    end
+
+    UI.message("Google Play Store Release Status: #{release}")
+  end
+
+  def buildBundle(flavor:, appEnv:, versionNumber:, buildCode:)
+    Dir.chdir("../../") do 
+      sh("fvm flutter build appbundle --flavor=#{flavor} --dart-define=APP_ENV=#{appEnv} --target=lib/main.dart --release --build-name=#{versionNumber} --build-number=#{buildCode}")
+    end
+  end
+
+  def get_version_name(releaseType:, package_name:)
+    versionCodes = google_play_track_version_codes(
+      track: releaseType,
+      package_name: package_name,
+      json_key: ENV["GOOGLE_SERVICE_CREDENTIALS"]
     )
+
+    if versionCodes.nil? || versionCodes.empty?
+      UI.error("Can't get version codes.")
+      return nil
+    end
+
+
+    UI.message("Version Codes: #{versionCodes}")
+
+    versionCode = versionCodes[0]
+
+    if versionCode.nil?
+      UI.error("Can't get version name.")
+      return nil
+    end
+    UI.message("Build code is #{versionCode.to_i + 1}")
+    return { buildCode: versionCode }
   end
 end
+
+
+module PublishType
+  PRODUCTION = "production"
+  STAGE = "stage"
+  DEVELOPMENT = "development"
+end
+
+  ## -------------------------------------------------------------------- Google Play Console --------------------------------------------------------------------
